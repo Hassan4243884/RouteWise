@@ -1,27 +1,38 @@
-# 🚛 WeatherRoute — Weather-Aware Truck Routing Application
+# 🚛 RouteWise — Weather-Aware Truck Routing Intelligence
 
-A full-stack, production-grade application for calculating, scoring, and visualizing weather-safe truck routes across North America. Built with **React 18, TypeScript, MapLibre GL JS, deck.gl, Django REST Framework, OpenRouteService (driving-hgv), and Open-Meteo**.
+A full-stack, enterprise-grade SaaS intelligence platform for calculating, scoring, and visualizing weather-safe commercial truck routes across North America. Built with **React 18, TypeScript, MapLibre GL JS, deck.gl, Django REST Framework, OpenRouteService (driving-hgv), and Open-Meteo**.
 
 ---
 
 ## 🌟 Key Features
 
-1. **3 Alternative Truck Routes (OpenRouteService)**:
-   - Fetches commercial truck routes using **OpenRouteService Directions v2** (`driving-hgv` profile with `alternative_routes`).
-   - Supports GeoJSON coordinate decoding with elevation and transit duration.
-   - Built-in geographic fallback generator if API key is not configured or external service limits are reached.
+1. **3 Alternative Commercial Truck Routes**:
+   - Fetches heavy goods vehicle routes using **OpenRouteService Directions v2** (`driving-hgv` profile with `alternative_routes`).
+   - Supports GeoJSON coordinate decoding with transit duration, distance, and leg geometry.
+   - Built-in geographic fallback generator if API limits are reached or external services are unavailable.
 
-2. **Configurable Checkpoint Weather Sampling**:
-   - Interpolates checkpoints along each route at user-configurable intervals (**10, 25, or 50 miles**).
-   - Accurately computes checkpoint ETA based on departure time, leg speeds, and cumulative travel distance.
+2. **3-Column SaaS Operational Workspace**:
+   - **Top Navigation Bar**: Live telemetry, route metrics, connection status indicator, and quick-access freight presets (`Chicago → Dallas`, `Denver → Salt Lake`, `Atlanta → Miami`).
+   - **Left Sidebar (Route Planner & Selection)**:
+     - Searchable, scrollable city comboboxes for North American freight hubs with instant swapping.
+     - Stacked Departure date/time and Load Weight (lbs) inputs with live validation.
+     - Checkpoint sampling interval selector (**10 mi, 25 mi, 50 mi**).
+     - Route cards with safety ranks, "✦ Best Route" recommendation badge, and risk mileage breakdown bars.
+   - **Center Map Canvas**:
+     - High-performance MapLibre GL engine with **CARTO Positron** vector basemap tiles.
+     - deck.gl `PathLayer` for color-coded risk corridors and `ScatterplotLayer` for interactive checkpoint waypoints.
+     - Interactive weather inspection tooltips displaying wind speed, gusts, precipitation rates, and temperatures.
+     - Floating 0–48 hour forecast time slider for real-time weather scrubbing.
+   - **Right Sidebar (Route Dossier)**:
+     - Deep operational breakdown for the selected route: safety badge, critical hazard alerts, route telemetry overview, and scrollable checkpoint-by-checkpoint timeline.
 
 3. **Hyper-Local Forecast Forecasting (Open-Meteo API)**:
-   - Batch-fetches 0–48 hour hourly forecasts from Open-Meteo with no API key requirement.
-   - Matches checkpoint ETA with forecast timestamps to evaluate real conditions at the exact moment a truck passes each point.
+   - Batch-fetches 0–48 hour hourly forecasts from Open-Meteo with zero API key requirement.
+   - Matches checkpoint ETAs with forecast timestamps to evaluate real conditions at the exact moment a truck passes each waypoint.
 
 4. **Exact Risk Classification & Load Sensitivity**:
-   - Categorizes conditions into 5 strict safety levels: `Low`, `Moderate`, `High`, `Severe`, and `No Travel`.
-   - Dynamic load sensitivity: crosswind safety thresholds scale downward for lighter trailers (< 40,000 lbs) to account for high-profile rollover risk.
+   - Categorizes conditions into 5 strict safety tiers: `Low`, `Moderate`, `High`, `Severe`, and `No Travel`.
+   - **Dynamic Load Sensitivity**: Crosswind safety thresholds scale downward for lighter trailers (< 40,000 lbs) to account for high-profile rollover hazards.
    - Evaluates sustained winds, wind gusts, rain intensity, snowfall rates, and frozen precipitation codes.
 
 5. **Lexicographic Route Recommendation Engine**:
@@ -30,17 +41,11 @@ A full-stack, production-grade application for calculating, scoring, and visuali
      2. Fewest High-risk miles
      3. Lowest average composite risk score
      4. Shortest travel duration
-   - Automatically selects and highlights the **#1 Recommended Route** with a "✦ Best" badge.
+   - Automatically selects and highlights the **#1 Recommended Route** with a prominent badge.
 
-6. **Interactive 2.5D/3D Map & deck.gl Overlays**:
-   - Custom dark Carto raster tiles for high-contrast viewing.
-   - `PathLayer`: Displays route corridors color-coded by the worst risk level on each route.
-   - `ScatterplotLayer`: Renders risk-colored checkpoint dots with hover inspection tooltips displaying wind, rain, snow, temperature, and timestamp.
-   - Route selection: Clicking any route card or line highlights it on map and brings it to the top.
-
-7. **Weather Heatmap with 0–48 Hour Forecast Slider**:
-   - `HeatmapLayer` (`@deck.gl/aggregation-layers`): Samples the route bounding box grid.
-   - 0–48 hour forecast time slider: Scrubbing time instantly shifts the active weather heatmap frame with **zero network re-fetching**.
+6. **CARTO Basemap Authentication**:
+   - Native support for `CARTO_BASE_URL` and `CARTO_API_TOKEN` configured in `frontend/.env.local`.
+   - Automatic request signing and Authorization header injection via `cartoTransformRequest` for crisp, vector-rendered tiles.
 
 ---
 
@@ -50,13 +55,15 @@ A full-stack, production-grade application for calculating, scoring, and visuali
 graph TD
     Client["React 18 + TypeScript (Vite)"]
     DRF["Django REST Framework (WSGI / Gunicorn)"]
-    HERE["HERE Routing API v8"]
+    ORS["OpenRouteService / HERE API"]
     OpenMeteo["Open-Meteo Forecast API"]
+    CARTO["CARTO Positron Vector Basemap"]
     WhiteNoise["WhiteNoise (Static / SPA Serving)"]
 
     Client -->|"POST /api/routes/"| DRF
     Client -->|"POST /api/heatmap/"| DRF
-    DRF -->|"Truck Alternatives"| HERE
+    Client -->|"Vector Tiles & Sprites"| CARTO
+    DRF -->|"Truck Alternatives"| ORS
     DRF -->|"Hourly Weather Batch"| OpenMeteo
     DRF --> WhiteNoise
     WhiteNoise --> Client
@@ -75,8 +82,8 @@ WeatherAwareRouting/
 │   │   └── wsgi.py
 │   ├── routing/              # Core routing & weather engine
 │   │   ├── services/
-│   │   │   ├── here.py       # HERE Routing client + flexpolyline decoder
-│   │   │   ├── checkpoints.py# Route spatial interpolation at 10/25/50 mi
+│   │   │   ├── here.py       # Routing service client + polyline decoder
+│   │   │   ├── checkpoints.py# Spatial interpolation at 10/25/50 mi
 │   │   │   ├── weather.py    # Open-Meteo batch forecast client
 │   │   │   ├── risk.py       # Risk classification matrix + load rules
 │   │   │   ├── ranking.py    # Lexicographic recommendation engine
@@ -88,17 +95,24 @@ WeatherAwareRouting/
 │   ├── requirements.txt
 │   └── manage.py
 ├── frontend/
+│   ├── public/
+│   │   └── favicon.svg       # RouteWise SVG vector favicon
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── InputPanel/         # Form inputs + Quick Preset routes
-│   │   │   ├── MapCanvas/          # MapLibre + deck.gl Path, Scatter & Heatmap layers
-│   │   │   ├── RouteSummaryPanel/  # Route cards, risk mileage bars, ranks
-│   │   │   ├── ForecastSlider/     # 0–48 hr time-scrubber with ticks
-│   │   │   └── CheckpointTooltip/  # Weather popup on checkpoint hover
-│   │   ├── context/AppContext.tsx  # Centralized immutable state management
-│   │   ├── api/routingApi.ts       # Typed API client
-│   │   ├── utils/riskColors.ts     # Risk colors (RGBA tuples & Hex)
-│   │   └── index.css               # Vanilla CSS design system & responsive layout
+│   │   │   ├── SearchableCitySelect/   # Searchable freight hub combobox
+│   │   │   ├── InputPanel/             # Left sidebar route planner form
+│   │   │   ├── RouteSummaryPanel/      # Route cards & risk mileage bars
+│   │   │   ├── SelectedRouteDossier/   # Right sidebar route dossier & telemetry
+│   │   │   ├── MapCanvas/              # MapLibre + deck.gl Path, Scatter & Heatmap
+│   │   │   ├── ForecastSlider/         # 0–48 hr time-scrubber with ticks
+│   │   │   └── CheckpointTooltip/      # Weather popup on checkpoint hover
+│   │   ├── config/
+│   │   │   └── carto.ts                # CARTO API credentials & style loader
+│   │   ├── context/AppContext.tsx      # Centralized state management
+│   │   ├── api/routingApi.ts           # Typed API client
+│   │   ├── utils/riskColors.ts         # Risk colors (RGBA tuples & Hex)
+│   │   ├── utils/formatters.ts         # Formatting utilities (distance, time, wind)
+│   │   └── index.css                   # Premium light theme design system
 │   ├── package.json
 │   ├── vite.config.ts
 │   └── tsconfig.json
@@ -129,8 +143,6 @@ pip install -r requirements.txt
 
 # Set up environment variables
 cp .env.example .env
-# Edit .env and paste your OpenRouteService API key:
-# ORS_API_KEY=your_actual_key_here
 
 # Apply migrations
 python manage.py migrate
@@ -141,7 +153,7 @@ pytest -v
 
 ---
 
-### 3. Frontend Setup
+### 3. Frontend Setup & Configuration
 
 ```bash
 cd ../frontend
@@ -149,7 +161,11 @@ cd ../frontend
 # Install dependencies
 npm install
 
-# Run frontend tests
+# (Optional) Add CARTO credentials in frontend/.env.local
+# CARTO_BASE_URL=https://gcp-us-east1.api.carto.com
+# CARTO_API_TOKEN=your_token_here
+
+# Run frontend test suite
 npm test
 
 # Build production bundle
@@ -162,14 +178,14 @@ npm run build
 
 Run backend and frontend in two separate terminals:
 
-**Terminal 1 (Backend - Port 8000):**
+**Terminal 1 (Backend — Port 8000):**
 ```bash
 cd backend
 source venv/bin/activate
 python manage.py runserver 8000
 ```
 
-**Terminal 2 (Frontend - Port 5173 with API Proxy):**
+**Terminal 2 (Frontend — Port 5173 with API Proxy):**
 ```bash
 cd frontend
 npm run dev
@@ -206,7 +222,7 @@ Now open **`http://localhost:8000`** — the full app runs from the unified serv
 ### Backend Unit Tests (Pytest)
 ```bash
 cd backend
-./venv/bin/pytest -v
+pytest -v
 ```
 - **108 tests passing** covering:
   - Coordinate interpolation and haversine calculations (`test_checkpoints.py`)
@@ -225,7 +241,7 @@ npm test
 - **40 tests passing** across 4 test suites:
   - `riskColors.test.ts`: RGBA conversions, CSS hex values, fallbacks
   - `ForecastSlider.test.tsx`: 0–48h scrubbing, step bounds, tick rendering
-  - `InputPanel.test.tsx`: Validation rules, error triggers, interval buttons
+  - `InputPanel.test.tsx`: Validation rules, error triggers, interval buttons, swap functionality
   - `RouteSummaryPanel.test.tsx`: Card metrics, badges, risk bars, selection
 
 ---
@@ -247,20 +263,21 @@ npm test
 
 When recording your demonstration walkthrough:
 1. **Introduction (0:00–0:45)**:
-   - Introduce the app as a Weather-Aware Truck Routing platform.
-   - Note the stack: React, TypeScript, MapLibre GL, deck.gl, and Django REST Framework.
-2. **Preset Demo (0:45–1:45)**:
-   - Click one of the quick presets (e.g., `Chicago → Dallas`).
-   - Point out the 3 alternative truck routes returned and drawn in different risk colors.
+   - Introduce the app as **RouteWise — Weather-Aware Truck Routing Intelligence**.
+   - Highlight the 3-column operational layout, light theme, and high-DPI CARTO Positron map.
+2. **Route Planning & Presets (0:45–1:45)**:
+   - Use the quick presets (`Chicago → Dallas`) or search for freight hubs using the combobox.
+   - Show the stacked Departure date and Load Weight input fields.
+   - Point out the 3 alternative truck routes returned with individual risk assessments.
 3. **Route Scoring & Recommendation (1:45–2:45)**:
-   - Highlight the **#1 Recommended Route** with the `✦ Best` badge.
+   - Highlight the **#1 Recommended Route** with the `✦ Best Route` badge.
    - Explain how lexicographical sorting prioritized fewest severe/no-travel miles.
    - Show the risk breakdown bars (miles in low, moderate, high, severe).
-4. **Checkpoint Weather Inspection (2:45–3:45)**:
-   - Hover over individual checkpoint dots along the routes.
-   - Point out the tooltip showing temperature, wind speed, gust, precipitation, and ETA.
+4. **Route Dossier & Checkpoint Inspection (2:45–3:45)**:
+   - Inspect the right sidebar **Route Dossier** showing severe weather hazard alerts and full route stats.
+   - Scroll through the checkpoint timeline and hover over waypoints on the map to display the live weather popup.
 5. **Weather Heatmap & 48-Hour Forecast Slider (3:45–4:45)**:
    - Scrub the time slider from `Now` to `+12h`, `+24h`, `+48h`.
-   - Explain how the deck.gl heatmap shifts smoothly without triggering server re-fetches.
+   - Explain how the deck.gl heatmap updates smoothly without triggering server re-fetches.
 6. **Testing & Code Quality (4:45–5:30)**:
-   - Show terminal with 108 Pytest backend tests and 40 Vitest frontend tests passing.
+   - Show the terminal with all 108 Pytest backend tests and 40 Vitest frontend tests passing.

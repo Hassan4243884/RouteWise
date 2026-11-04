@@ -124,6 +124,7 @@ WeatherAwareRouting/
 ## ⚡ Quickstart Guide
 
 ### 1. Prerequisites
+
 - **Python**: 3.10+
 - **Node.js**: 18+ (npm 9+)
 
@@ -179,6 +180,7 @@ npm run build
 Run backend and frontend in two separate terminals:
 
 **Terminal 1 (Backend — Port 8000):**
+
 ```bash
 cd backend
 source venv/bin/activate
@@ -186,6 +188,7 @@ python manage.py runserver 8000
 ```
 
 **Terminal 2 (Frontend — Port 5173 with API Proxy):**
+
 ```bash
 cd frontend
 npm run dev
@@ -220,10 +223,12 @@ Now open **`http://localhost:8000`** — the full app runs from the unified serv
 ## 🧪 Test Suites
 
 ### Backend Unit Tests (Pytest)
+
 ```bash
 cd backend
 pytest -v
 ```
+
 - **108 tests passing** covering:
   - Coordinate interpolation and haversine calculations (`test_checkpoints.py`)
   - External routing API fallbacks and polyline decoder (`test_here.py`)
@@ -234,10 +239,12 @@ pytest -v
   - DRF API views and HTTP status codes (`test_views.py`)
 
 ### Frontend Unit Tests (Vitest + React Testing Library)
+
 ```bash
 cd frontend
 npm test
 ```
+
 - **40 tests passing** across 4 test suites:
   - `riskColors.test.ts`: RGBA conversions, CSS hex values, fallbacks
   - `ForecastSlider.test.tsx`: 0–48h scrubbing, step bounds, tick rendering
@@ -248,36 +255,13 @@ npm test
 
 ## 📋 Weather Risk Matrix Reference
 
-| Condition | Low (0) | Moderate (1) | High (2) | Severe (3) | No Travel (4) |
-|---|---|---|---|---|---|
-| **Sustained Wind (Loaded ≥40k lbs)** | < 25 mph | 25–35 mph | 35–45 mph | 45–60 mph | > 60 mph |
-| **Sustained Wind (Light <40k lbs)** | < 20 mph | 20–30 mph | 30–40 mph | 40–50 mph | > 50 mph |
-| **Wind Gusts** | < 35 mph | 35–45 mph | 45–55 mph | 55–70 mph | > 70 mph |
-| **Rain Rate** | < 0.1 in/hr | 0.1–0.3 in/hr | 0.3–0.6 in/hr | 0.6–1.0 in/hr | > 1.0 in/hr |
-| **Snow Rate** | 0 in/hr | < 0.5 in/hr | 0.5–1.0 in/hr | 1.0–2.0 in/hr | > 2.0 in/hr |
-| **Severe Conditions** | — | — | Freezing Rain | Blizzard / Tornado / Hurricane |
+| Condition                            | Low (0)     | Moderate (1)  | High (2)      | Severe (3)                     | No Travel (4) |
+| ------------------------------------ | ----------- | ------------- | ------------- | ------------------------------ | ------------- |
+| **Sustained Wind (Loaded ≥40k lbs)** | < 25 mph    | 25–35 mph     | 35–45 mph     | 45–60 mph                      | > 60 mph      |
+| **Sustained Wind (Light <40k lbs)**  | < 20 mph    | 20–30 mph     | 30–40 mph     | 40–50 mph                      | > 50 mph      |
+| **Wind Gusts**                       | < 35 mph    | 35–45 mph     | 45–55 mph     | 55–70 mph                      | > 70 mph      |
+| **Rain Rate**                        | < 0.1 in/hr | 0.1–0.3 in/hr | 0.3–0.6 in/hr | 0.6–1.0 in/hr                  | > 1.0 in/hr   |
+| **Snow Rate**                        | 0 in/hr     | < 0.5 in/hr   | 0.5–1.0 in/hr | 1.0–2.0 in/hr                  | > 2.0 in/hr   |
+| **Severe Conditions**                | —           | —             | Freezing Rain | Blizzard / Tornado / Hurricane |
 
 ---
-
-## 🎥 Walkthrough Video Guide (Loom)
-
-When recording your demonstration walkthrough:
-1. **Introduction (0:00–0:45)**:
-   - Introduce the app as **RouteWise — Weather-Aware Truck Routing Intelligence**.
-   - Highlight the 3-column operational layout, light theme, and high-DPI CARTO Positron map.
-2. **Route Planning & Presets (0:45–1:45)**:
-   - Use the quick presets (`Chicago → Dallas`) or search for freight hubs using the combobox.
-   - Show the stacked Departure date and Load Weight input fields.
-   - Point out the 3 alternative truck routes returned with individual risk assessments.
-3. **Route Scoring & Recommendation (1:45–2:45)**:
-   - Highlight the **#1 Recommended Route** with the `✦ Best Route` badge.
-   - Explain how lexicographical sorting prioritized fewest severe/no-travel miles.
-   - Show the risk breakdown bars (miles in low, moderate, high, severe).
-4. **Route Dossier & Checkpoint Inspection (2:45–3:45)**:
-   - Inspect the right sidebar **Route Dossier** showing severe weather hazard alerts and full route stats.
-   - Scroll through the checkpoint timeline and hover over waypoints on the map to display the live weather popup.
-5. **Weather Heatmap & 48-Hour Forecast Slider (3:45–4:45)**:
-   - Scrub the time slider from `Now` to `+12h`, `+24h`, `+48h`.
-   - Explain how the deck.gl heatmap updates smoothly without triggering server re-fetches.
-6. **Testing & Code Quality (4:45–5:30)**:
-   - Show the terminal with all 108 Pytest backend tests and 40 Vitest frontend tests passing.
